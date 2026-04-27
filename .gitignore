@@ -1,0 +1,14 @@
+# Helm packaging output
+*.tgz
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# Local helm-unittest cache
+__snapshot__/

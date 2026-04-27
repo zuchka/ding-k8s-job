@@ -1,0 +1,35 @@
+apiVersion: v2
+name: ding-k8s-job
+description: Run Kubernetes Jobs and CronJobs with embedded DING alerting — alert on non-zero exit out of the box.
+type: application
+
+# Chart's own SemVer — bumps on chart changes regardless of DING version
+version: 1.0.0
+
+# DING release version this chart pins by default (image.tag falls back to this)
+appVersion: "0.5.0"
+
+# Helm 3.8+ required for OCI distribution and values.schema.json
+kubeVersion: ">=1.21-0"
+
+home: https://github.com/zuchka/ding-k8s-job
+icon: https://raw.githubusercontent.com/zuchka/ding/main/docs/assets/ding-logo.png
+
+sources:
+  - https://github.com/zuchka/ding-k8s-job
+  - https://github.com/zuchka/ding
+
+keywords:
+  - alerting
+  - observability
+  - jobs
+  - cronjob
+  - ephemeral
+
+maintainers:
+  - name: zuchka
+    url: https://github.com/zuchka
+
+annotations:
+  artifacthub.io/license: AGPL-3.0-or-later
+  artifacthub.io/category: monitoring-logging
