@@ -41,7 +41,7 @@ jobs:
       - name: Install — basic Job
         run: |
           helm install ci-basic . -f ci/basic-values.yaml --wait --timeout 5m
-          kubectl wait --for=condition=Complete job/ci-basic --timeout=120s
+          kubectl wait --for=condition=Complete job -l app.kubernetes.io/instance=ci-basic --timeout=120s
           helm uninstall ci-basic --wait
 
       - name: Install — CronJob
@@ -62,6 +62,6 @@ jobs:
           kubectl create secret generic ci-test-secret \
             --from-literal=WEBHOOK_URL=http://localhost:9999/fake
           helm install ci-existing . -f ci/existingsecret-values.yaml --wait --timeout 5m
-          kubectl wait --for=condition=Complete job/ci-existing --timeout=120s
+          kubectl wait --for=condition=Complete job -l app.kubernetes.io/instance=ci-existing --timeout=120s
           helm uninstall ci-existing --wait
           kubectl delete secret ci-test-secret
