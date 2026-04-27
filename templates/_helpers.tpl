@@ -180,7 +180,9 @@ spec:
     - name: install-ding
       image: {{ include "ding-k8s-job.dingImage" . }}
       imagePullPolicy: {{ .Values.ding.image.pullPolicy }}
-      command: ["/bin/sh", "-c", "cp /ding /shared/ding"]
+      # `ding install` self-copies the binary — works against the FROM-scratch
+      # release image (no /bin/sh available). Requires DING >= v0.5.1.
+      command: ["/ding", "install", "/shared/ding"]
       {{- with .Values.dingResources }}
       resources:
         {{- toYaml . | nindent 8 }}

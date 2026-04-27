@@ -7,7 +7,7 @@ type: application
 version: 1.0.0
 
 # DING release version this chart pins by default (image.tag falls back to this)
-appVersion: "0.5.0"
+appVersion: "v0.5.1"
 
 # Helm 3.8+ required for OCI distribution and values.schema.json
 kubeVersion: ">=1.21-0"
