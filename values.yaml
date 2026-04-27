@@ -1,7 +1,7 @@
 # Workload — what `ding run --` wraps. Required.
 image:
-  repository: ""
-  tag: ""
+  repository: "REQUIRED-set-image-repository-or-chart-fails"
+  tag: "REQUIRED-set-image-tag-or-chart-fails"
   pullPolicy: IfNotPresent
 
 command: []
