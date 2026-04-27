@@ -148,7 +148,7 @@ spec:
         - {{ . | quote }}
         {{- end }}
       {{- end }}
-      {{/* envFrom priority: existingSecret > chart-managed slack Secret > none. Preserved from T4 — must remain conditional. */}}
+      {{- /* envFrom priority: existingSecret > chart-managed slack Secret > none. Preserved from T4 — must remain conditional. */}}
       envFrom:
         {{- if .Values.existingSecret }}
         - secretRef:
