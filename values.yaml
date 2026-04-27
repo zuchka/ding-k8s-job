@@ -24,3 +24,13 @@ kind: Job
 backoffLimit: 0
 restartPolicy: Never
 terminationGracePeriodSeconds: 60
+
+ttlSecondsAfterFinished: null   # Job auto-cleanup; null = no TTL
+activeDeadlineSeconds: null     # Job timeout; null = no deadline
+
+# CronJob — only used when kind=CronJob
+schedule: ""                # required if kind=CronJob, e.g. "0 2 * * *"
+concurrencyPolicy: Forbid
+suspend: false
+successfulJobsHistoryLimit: 3
+failedJobsHistoryLimit: 1
