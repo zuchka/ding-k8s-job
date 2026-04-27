@@ -1,0 +1,35 @@
+{{- $hasSlack := .Values.slack.webhookUrl -}}
+{{- $hasExtra := not (empty .Values.extraNotifiers) -}}
+{{- $hasUserRules := not (empty .Values.rules) -}}
+{{ .Chart.Name }} {{ .Chart.AppVersion }} installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+To inspect the rendered configuration:
+  kubectl get configmap {{ include "ding-k8s-job.fullname" . }}-config -o jsonpath='{.data.ding\.yaml}'
+
+{{- if eq .Values.kind "Job" }}
+
+To watch the Job:
+  kubectl wait --for=condition=Complete job/{{ include "ding-k8s-job.fullname" . }} --timeout=120s
+  kubectl logs job/{{ include "ding-k8s-job.fullname" . }} -c workload --follow
+{{- else }}
+
+To watch CronJob runs:
+  kubectl get jobs -l app.kubernetes.io/instance={{ .Release.Name }} --watch
+{{- end }}
+
+{{- if and (not $hasSlack) (not $hasExtra) }}
+
+WARNING: No notifiers configured (slack.webhookUrl is empty, existingSecret has no
+  effect without extraNotifiers, and extraNotifiers is empty). DING will run and
+  evaluate rules but won't deliver alerts anywhere. This is OK for smoke tests; for
+  real use, set slack.webhookUrl, existingSecret + extraNotifiers, or both.
+{{- end }}
+
+{{- if and (not $hasUserRules) (not $hasSlack) }}
+
+WARNING: The default rule "job_failed" alerts to a notifier named "slack", but
+  slack.webhookUrl is empty so no Slack notifier was rendered. Either:
+    - set slack.webhookUrl=<url>, OR
+    - provide your own rules: [...] referencing a notifier that exists in
+      extraNotifiers (or the chart-managed slack notifier).
+{{- end }}

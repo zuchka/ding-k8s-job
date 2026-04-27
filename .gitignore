@@ -12,3 +12,6 @@
 
 # Local helm-unittest cache
 __snapshot__/
+
+# helm-unittest --debugPlugin output
+.debug/

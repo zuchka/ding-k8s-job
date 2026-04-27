@@ -1,0 +1,92 @@
+suite: Render-time validation
+templates:
+  - templates/job.yaml
+  - templates/configmap.yaml
+  - templates/secret.yaml
+
+tests:
+  - it: fails when image.repository is empty
+    set:
+      image.repository: ""
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+    asserts:
+      - failedTemplate:
+          errorMessage: "image.repository is required (the workload image to wrap)"
+        template: templates/job.yaml
+
+  - it: fails when image.tag is empty
+    set:
+      image.repository: my-app
+      image.tag: ""
+      command: ["python", "train.py"]
+    asserts:
+      - failedTemplate:
+          errorMessage: "image.tag is required (no `latest` default to prevent footguns)"
+        template: templates/job.yaml
+
+  - it: fails when command is empty
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: []
+    asserts:
+      - failedTemplate:
+          errorMessage: "command is required (the workload command DING will wrap)"
+        template: templates/configmap.yaml
+
+  - it: fails when kind is invalid
+    set:
+      kind: Pod
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+    asserts:
+      - failedTemplate:
+          errorMessage: "kind must be Job or CronJob, got: Pod"
+        template: templates/job.yaml
+
+  - it: fails when slack.webhookUrl AND existingSecret are both set
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      existingSecret: my-secret
+    asserts:
+      - failedTemplate:
+          errorMessage: "slack.webhookUrl and existingSecret are mutually exclusive — pick one"
+        template: templates/configmap.yaml
+
+  - it: fails when extraNotifiers contains slack key AND slack.webhookUrl is set
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      extraNotifiers:
+        slack:
+          type: slack
+          url: https://hooks.slack.com/other
+    asserts:
+      - failedTemplate:
+          errorMessage: "extraNotifiers.slack collides with the chart-managed slack notifier — use one or the other"
+        template: templates/configmap.yaml
+
+  - it: fails when image.repository is the sentinel default
+    set:
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+    asserts:
+      - failedTemplate:
+          errorMessage: "image.repository is required (the workload image to wrap)"
+        template: templates/job.yaml
+
+  - it: fails when image.tag is the sentinel default
+    set:
+      image.repository: my-app
+      command: ["python", "train.py"]
+    asserts:
+      - failedTemplate:
+          errorMessage: "image.tag is required (no `latest` default to prevent footguns)"
+        template: templates/job.yaml

@@ -63,6 +63,66 @@ Workload command — wraps user's command with `ding run --`.
 {{- end }}
 
 {{/*
+Resolve the workload image (with sentinel rejection).
+Sentinel defaults in values.yaml are required because empty strings break
+helm lint, and helm's `required` directive only emits a warning. We strip
+sentinels ("REQUIRED-...") to empty, then `fail` if still empty.
+
+When BOTH repo and tag are at sentinel defaults AND command is empty, we emit a
+placeholder image string instead of failing — that combination signals "user
+hasn't configured anything yet" (e.g. `helm lint .`). This keeps lint output
+parseable. Real installs always set at least one real value, which trips the
+fail path.
+*/}}
+{{- define "ding-k8s-job.workloadImage" -}}
+{{- $repo := regexReplaceAll "^REQUIRED-.*$" .Values.image.repository "" -}}
+{{- $tag := regexReplaceAll "^REQUIRED-.*$" .Values.image.tag "" -}}
+{{- $unconfigured := and (not $repo) (and (not $tag) (empty .Values.command)) -}}
+{{- if $unconfigured -}}
+{{- printf "PLACEHOLDER-set-image-repository-and-tag:PLACEHOLDER" -}}
+{{- else -}}
+{{- if not $repo -}}{{- fail "image.repository is required (the workload image to wrap)" -}}{{- end -}}
+{{- if not $tag -}}{{- fail "image.tag is required (no `latest` default to prevent footguns)" -}}{{- end -}}
+{{- printf "%s:%s" $repo $tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Render-time validation. Called from configmap.yaml so it runs once per render
+regardless of which other templates render. Fails with clear messages.
+
+Skips entirely when both image.repository and image.tag are at sentinel defaults
+AND command is empty — that combination signals "user hasn't configured anything"
+(e.g. `helm lint .` with stock defaults). In that case we let workloadImage in
+podSpec be the gating fail point at install time.
+*/}}
+{{- define "ding-k8s-job.validate" -}}
+{{- $repo := regexReplaceAll "^REQUIRED-.*$" .Values.image.repository "" -}}
+{{- $tag := regexReplaceAll "^REQUIRED-.*$" .Values.image.tag "" -}}
+{{- $unconfigured := and (not $repo) (and (not $tag) (empty .Values.command)) -}}
+{{- if not $unconfigured -}}
+{{- if not $repo -}}
+{{- fail "image.repository is required (the workload image to wrap)" -}}
+{{- end -}}
+{{- if not $tag -}}
+{{- fail "image.tag is required (no `latest` default to prevent footguns)" -}}
+{{- end -}}
+{{- if empty .Values.command -}}
+{{- fail "command is required (the workload command DING will wrap)" -}}
+{{- end -}}
+{{- if and (ne .Values.kind "Job") (ne .Values.kind "CronJob") -}}
+{{- fail (printf "kind must be Job or CronJob, got: %s" .Values.kind) -}}
+{{- end -}}
+{{- if and .Values.slack.webhookUrl .Values.existingSecret -}}
+{{- fail "slack.webhookUrl and existingSecret are mutually exclusive — pick one" -}}
+{{- end -}}
+{{- if and .Values.slack.webhookUrl (hasKey .Values.extraNotifiers "slack") -}}
+{{- fail "extraNotifiers.slack collides with the chart-managed slack notifier — use one or the other" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Pod spec template — shared between Job and CronJob.
 Renders volumes, initContainers (DING-copy), workload container with downward API,
 envFrom, command wrapping, and config-mount.
@@ -130,7 +190,7 @@ spec:
           mountPath: /shared
   containers:
     - name: workload
-      image: {{ required "image.repository is required (the workload image to wrap)" .Values.image.repository }}:{{ required "image.tag is required (no `latest` default to prevent footguns)" .Values.image.tag }}
+      image: {{ include "ding-k8s-job.workloadImage" . }}
       imagePullPolicy: {{ .Values.image.pullPolicy }}
       {{- with .Values.containerSecurityContext }}
       securityContext:

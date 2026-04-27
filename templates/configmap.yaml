@@ -1,3 +1,4 @@
+{{- include "ding-k8s-job.validate" . }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
