@@ -98,3 +98,60 @@ tests:
           path: data["ding.yaml"]
           pattern: 'webhook-staging:'
         template: templates/configmap.yaml
+
+  - it: extraNotifiers as YAML string (--set-file path)
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      existingSecret: my-prod-secrets
+      extraNotifiers: |
+        pagerduty-prod:
+          type: pagerduty
+          routing_key: ${PAGERDUTY_ROUTING_KEY}
+    asserts:
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'pagerduty-prod:'
+        template: templates/configmap.yaml
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'type: pagerduty'
+        template: templates/configmap.yaml
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'routing_key: \$\{PAGERDUTY_ROUTING_KEY\}'
+        template: templates/configmap.yaml
+      - notMatchRegex:
+          path: data["ding.yaml"]
+          pattern: '^\s*notifiers: \|'
+        template: templates/configmap.yaml
+
+  - it: rules as YAML string (--set-file path)
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      rules: |
+        - name: from_set_file
+          match:
+            metric: run.exit
+          condition: value != 0
+          mode: end-of-run
+          message: "alert"
+          alert:
+            - notifier: slack
+    asserts:
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'name: from_set_file'
+        template: templates/configmap.yaml
+      - notMatchRegex:
+          path: data["ding.yaml"]
+          pattern: 'name: job_failed'
+        template: templates/configmap.yaml
+      - notMatchRegex:
+          path: data["ding.yaml"]
+          pattern: '^\s*rules: \|'
+        template: templates/configmap.yaml
