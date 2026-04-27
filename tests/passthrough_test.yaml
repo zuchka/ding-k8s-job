@@ -1,0 +1,100 @@
+suite: existingSecret + extraNotifiers passthrough
+templates:
+  - templates/job.yaml
+  - templates/configmap.yaml
+  - templates/secret.yaml
+
+tests:
+  - it: skips chart-managed Secret when existingSecret is set
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      existingSecret: my-prod-secrets
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/secret.yaml
+
+  - it: workload envFroms the existingSecret name
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      existingSecret: my-prod-secrets
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: my-prod-secrets
+        template: templates/job.yaml
+
+  - it: merges extraNotifiers into ding.yaml notifiers block
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      existingSecret: my-prod-secrets
+      extraNotifiers:
+        pagerduty-prod:
+          type: pagerduty
+          routing_key: ${PAGERDUTY_ROUTING_KEY}
+    asserts:
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'pagerduty-prod:'
+        template: templates/configmap.yaml
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'type: pagerduty'
+        template: templates/configmap.yaml
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'routing_key: \$\{PAGERDUTY_ROUTING_KEY\}'
+        template: templates/configmap.yaml
+
+  - it: user-provided rules fully replace the default job_failed rule
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      rules:
+        - name: custom_rule
+          match:
+            metric: run.exit
+          condition: "value > 0"
+          mode: end-of-run
+          message: "Custom alert"
+          alert:
+            - notifier: slack
+    asserts:
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'name: custom_rule'
+        template: templates/configmap.yaml
+      - notMatchRegex:
+          path: data["ding.yaml"]
+          pattern: 'name: job_failed'
+        template: templates/configmap.yaml
+
+  - it: combines slack first-class with extraNotifiers (both render)
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      extraNotifiers:
+        webhook-staging:
+          type: webhook
+          url: https://staging.example.com/hook
+    asserts:
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'slack:'
+        template: templates/configmap.yaml
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'webhook-staging:'
+        template: templates/configmap.yaml

@@ -19,6 +19,15 @@ ding:
 slack:
   webhookUrl: ""
 
+# Production: pre-provisioned Secret reference. Mutually exclusive with slack.webhookUrl.
+existingSecret: ""
+
+# Arbitrary notifier passthrough — keys merge into ding.yaml's notifiers: block.
+extraNotifiers: {}
+
+# Rules — if non-empty, fully replaces the default job_failed rule.
+rules: []
+
 # K8s structure
 kind: Job
 backoffLimit: 0

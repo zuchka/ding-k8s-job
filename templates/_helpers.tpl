@@ -101,8 +101,13 @@ spec:
         {{- end }}
       {{- end }}
       envFrom:
+        {{- if .Values.existingSecret }}
+        - secretRef:
+            name: {{ .Values.existingSecret }}
+        {{- else if .Values.slack.webhookUrl }}
         - secretRef:
             name: {{ include "ding-k8s-job.fullname" . }}
+        {{- end }}
       env:
         - name: POD_UID
           valueFrom:

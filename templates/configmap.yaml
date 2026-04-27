@@ -4,13 +4,6 @@ metadata:
   name: {{ include "ding-k8s-job.fullname" . }}-config
   labels:
     {{- include "ding-k8s-job.labels" . | nindent 4 }}
-{{/*
-  NOTE: the default rule's `message:` field contains DING template syntax
-  ({{ "{{" }} .pod {{ "}}" }} etc.) which collides with Helm's {{ "{{" }} {{ "}}" }} delimiters.
-  We use the backtick-string-literal pattern (`{{ "{{" }}`...`{{ "}}" }}`) to embed those
-  as raw text in the rendered ConfigMap. Do NOT switch to printf; mixing
-  styles in this file will silently mis-render.
-*/}}
 data:
   ding.yaml: |
     server:
@@ -21,12 +14,28 @@ data:
         type: slack
         url: ${SLACK_WEBHOOK_URL}
       {{- end }}
+      {{- with .Values.extraNotifiers }}
+      {{- if kindIs "string" . }}
+      {{- fromYaml . | toYaml | nindent 6 }}
+      {{- else }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- end }}
     rules:
+      {{- if empty .Values.rules }}
       - name: job_failed
         match:
           metric: run.exit
         condition: value != 0
         mode: end-of-run
+        {{/* Below: backtick-string-literal escape so Helm emits DING's {{ "{{" }} ... {{ "}}" }} syntax verbatim. Do NOT switch to printf — mixing styles silently mis-renders. */}}
         message: "{{`{{ .pod }} (Job {{ .job_name }}) failed with exit {{ .exit_code }}`}}"
         alert:
           - notifier: slack
+      {{- else }}
+      {{- if kindIs "string" .Values.rules }}
+      {{- fromYamlArray .Values.rules | toYaml | nindent 6 }}
+      {{- else }}
+      {{- toYaml .Values.rules | nindent 6 }}
+      {{- end }}
+      {{- end }}
