@@ -1,0 +1,127 @@
+suite: K8s escape hatches flow through to the rendered Job
+templates:
+  - templates/job.yaml
+
+tests:
+  - it: nodeSelector flows through
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      nodeSelector:
+        gpu: "true"
+        zone: us-east-1a
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector.gpu
+          value: "true"
+      - equal:
+          path: spec.template.spec.nodeSelector.zone
+          value: us-east-1a
+
+  - it: tolerations flow through
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+    asserts:
+      - contains:
+          path: spec.template.spec.tolerations
+          content:
+            key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+
+  - it: resources flow through to the workload container
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: "1"
+          memory: 2Gi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 500m
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 2Gi
+
+  - it: imagePullSecrets flow through
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      imagePullSecrets:
+        - name: my-registry-creds
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: my-registry-creds
+
+  - it: extraEnv appends to workload env (after downward API block)
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      extraEnv:
+        - name: APP_DEBUG
+          value: "true"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: APP_DEBUG
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+
+  - it: serviceAccountName flows through
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      serviceAccountName: ding-runner
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: ding-runner
+
+  - it: podAnnotations and podLabels flow through
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      podAnnotations:
+        prometheus.io/scrape: "false"
+      podLabels:
+        team: data-platform
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["prometheus.io/scrape"]
+          value: "false"
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: data-platform

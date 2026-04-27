@@ -71,27 +71,75 @@ envFrom, command wrapping, and config-mount.
 metadata:
   labels:
     {{- include "ding-k8s-job.selectorLabels" . | nindent 4 }}
+    {{- with .Values.podLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.podAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   restartPolicy: {{ .Values.restartPolicy }}
   terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+  {{- with .Values.serviceAccountName }}
+  serviceAccountName: {{ . }}
+  {{- end }}
+  {{- with .Values.priorityClassName }}
+  priorityClassName: {{ . }}
+  {{- end }}
+  {{- with .Values.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.podSecurityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.nodeSelector }}
+  nodeSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.tolerations }}
+  tolerations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.affinity }}
+  affinity:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   volumes:
     - name: ding-bin
       emptyDir: {}
     - name: ding-config
       configMap:
         name: {{ include "ding-k8s-job.fullname" . }}-config
+    {{- with .Values.extraVolumes }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   initContainers:
     - name: install-ding
       image: {{ include "ding-k8s-job.dingImage" . }}
       imagePullPolicy: {{ .Values.ding.image.pullPolicy }}
       command: ["/bin/sh", "-c", "cp /ding /shared/ding"]
+      {{- with .Values.dingResources }}
+      resources:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumeMounts:
         - name: ding-bin
           mountPath: /shared
   containers:
     - name: workload
-      image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+      image: {{ required "image.repository is required (the workload image to wrap)" .Values.image.repository }}:{{ required "image.tag is required (no `latest` default to prevent footguns)" .Values.image.tag }}
       imagePullPolicy: {{ .Values.image.pullPolicy }}
+      {{- with .Values.containerSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.resources }}
+      resources:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       command:
         {{- include "ding-k8s-job.workloadCommand" . | nindent 8 }}
       {{- with .Values.args }}
@@ -100,6 +148,7 @@ spec:
         - {{ . | quote }}
         {{- end }}
       {{- end }}
+      {{/* envFrom priority: existingSecret > chart-managed slack Secret > none. Preserved from T4 — must remain conditional. */}}
       envFrom:
         {{- if .Values.existingSecret }}
         - secretRef:
@@ -107,6 +156,9 @@ spec:
         {{- else if .Values.slack.webhookUrl }}
         - secretRef:
             name: {{ include "ding-k8s-job.fullname" . }}
+        {{- end }}
+        {{- with .Values.extraEnvFrom }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
       env:
         - name: POD_UID
@@ -129,10 +181,16 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: "metadata.labels['job-name']"
+        {{- with .Values.extraEnv }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       volumeMounts:
         - name: ding-bin
           mountPath: /shared
         - name: ding-config
           mountPath: /config
           readOnly: true
+        {{- with .Values.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
 {{- end }}

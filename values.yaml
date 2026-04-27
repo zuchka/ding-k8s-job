@@ -43,3 +43,25 @@ concurrencyPolicy: Forbid
 suspend: false
 successfulJobsHistoryLimit: 3
 failedJobsHistoryLimit: 1
+
+# K8s escape hatches — for users with real cluster requirements
+serviceAccountName: ""
+imagePullSecrets: []
+resources: {}                 # workload container resources
+dingResources: {}             # DING initContainer resources
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+containerSecurityContext: {}
+priorityClassName: ""
+extraEnv: []
+extraEnvFrom: []
+extraVolumes: []
+extraVolumeMounts: []
+
+# Naming
+fullnameOverride: ""
+nameOverride: ""
