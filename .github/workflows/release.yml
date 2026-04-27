@@ -49,10 +49,19 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
 
+      - name: Log in to ghcr.io for cosign
+        # cosign reads ~/.docker/config.json for registry auth; helm's registry
+        # login above doesn't populate it, so cosign needs its own auth step
+        # before signing.
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Sign the chart artifact (keyless)
         # cosign 2.x resolves the tag to a digest internally — no separate
-        # `crane digest` step needed. If you need to inspect the digest for
-        # logs/release notes, add `imjasonh/setup-crane@v0.3` before this step.
+        # `crane digest` step needed.
         run: |
           CHART_VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
           cosign sign --yes "ghcr.io/zuchka/ding-k8s-job:${CHART_VERSION}"
