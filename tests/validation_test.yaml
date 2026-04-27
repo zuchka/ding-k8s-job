@@ -35,7 +35,7 @@ tests:
           errorMessage: "command is required (the workload command DING will wrap)"
         template: templates/configmap.yaml
 
-  - it: fails when kind is invalid
+  - it: fails when kind is invalid (schema catches before render-time validation)
     set:
       kind: Pod
       image.repository: my-app
@@ -43,7 +43,7 @@ tests:
       command: ["python", "train.py"]
     asserts:
       - failedTemplate:
-          errorMessage: "kind must be Job or CronJob, got: Pod"
+          errorPattern: "kind.*value must be one of 'Job', 'CronJob'"
         template: templates/job.yaml
 
   - it: fails when slack.webhookUrl AND existingSecret are both set

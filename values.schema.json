@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Workload image repository (required). Render-time validation in templates rejects REQUIRED-/PLACEHOLDER- sentinel values; schema doesn't enforce this because Helm's RE2 regex engine lacks negative-lookahead support."
+        },
+        "tag": {
+          "type": "string",
+          "description": "Workload image tag (required). Render-time validation in templates rejects REQUIRED-/PLACEHOLDER- sentinel values; schema doesn't enforce this because Helm's RE2 regex engine lacks negative-lookahead support."
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"]
+        }
+      }
+    },
+    "command": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "args": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repository": { "type": "string" },
+            "tag": { "type": "string" },
+            "pullPolicy": {
+              "type": "string",
+              "enum": ["Always", "IfNotPresent", "Never"]
+            }
+          }
+        },
+        "drainTimeout": { "type": "string" }
+      }
+    },
+    "slack": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "webhookUrl": { "type": "string" }
+      }
+    },
+    "extraNotifiers": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "object", "additionalProperties": true }
+      ]
+    },
+    "existingSecret": { "type": "string" },
+    "rules": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      ]
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["Job", "CronJob"]
+    },
+    "schedule": { "type": "string" },
+    "backoffLimit": { "type": "integer", "minimum": 0 },
+    "concurrencyPolicy": {
+      "type": "string",
+      "enum": ["Allow", "Forbid", "Replace"]
+    },
+    "suspend": { "type": "boolean" },
+    "successfulJobsHistoryLimit": { "type": "integer", "minimum": 0 },
+    "failedJobsHistoryLimit": { "type": "integer", "minimum": 0 },
+    "restartPolicy": {
+      "type": "string",
+      "enum": ["Never", "OnFailure"]
+    },
+    "terminationGracePeriodSeconds": { "type": "integer", "minimum": 0 },
+    "ttlSecondsAfterFinished": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "activeDeadlineSeconds": {
+      "type": ["integer", "null"],
+      "minimum": 1
+    },
+    "serviceAccountName": { "type": "string" },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": { "name": { "type": "string" } },
+        "required": ["name"]
+      }
+    },
+    "resources": { "type": "object", "additionalProperties": true },
+    "dingResources": { "type": "object", "additionalProperties": true },
+    "nodeSelector": { "type": "object", "additionalProperties": { "type": "string" } },
+    "tolerations": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "affinity": { "type": "object", "additionalProperties": true },
+    "podAnnotations": { "type": "object", "additionalProperties": { "type": "string" } },
+    "podLabels": { "type": "object", "additionalProperties": { "type": "string" } },
+    "podSecurityContext": { "type": "object", "additionalProperties": true },
+    "containerSecurityContext": { "type": "object", "additionalProperties": true },
+    "priorityClassName": { "type": "string" },
+    "extraEnv": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "extraEnvFrom": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "extraVolumes": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "extraVolumeMounts": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "fullnameOverride": { "type": "string" },
+    "nameOverride": { "type": "string" }
+  }
+}
