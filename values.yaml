@@ -1,0 +1,26 @@
+# Workload — what `ding run --` wraps. Required.
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+command: []
+args: []
+
+# DING wrapper container — the initContainer that copies /ding into the Pod.
+ding:
+  image:
+    repository: ghcr.io/zuchka/ding
+    tag: ""              # defaults to .Chart.AppVersion
+    pullPolicy: IfNotPresent
+  drainTimeout: 30s
+
+# Slack first-class shortcut — chart creates a Secret with key SLACK_WEBHOOK_URL.
+slack:
+  webhookUrl: ""
+
+# K8s structure
+kind: Job
+backoffLimit: 0
+restartPolicy: Never
+terminationGracePeriodSeconds: 60

@@ -1,0 +1,16 @@
+{{- if eq .Values.kind "Job" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "ding-k8s-job.fullname" . }}
+  labels:
+    {{- include "ding-k8s-job.labels" . | nindent 4 }}
+spec:
+  backoffLimit: {{ .Values.backoffLimit }}
+  template:
+    {{- include "ding-k8s-job.podSpec" . | nindent 4 }}
+{{- else if eq .Values.kind "CronJob" }}
+{{- /* CronJob branch added in Task 3 */ -}}
+{{- else }}
+{{- fail (printf "kind must be Job or CronJob, got: %s" .Values.kind) }}
+{{- end }}

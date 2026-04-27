@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ding-k8s-job.fullname" . }}-config
+  labels:
+    {{- include "ding-k8s-job.labels" . | nindent 4 }}
+{{/*
+  NOTE: the default rule's `message:` field contains DING template syntax
+  ({{ "{{" }} .pod {{ "}}" }} etc.) which collides with Helm's {{ "{{" }} {{ "}}" }} delimiters.
+  We use the backtick-string-literal pattern (`{{ "{{" }}`...`{{ "}}" }}`) to embed those
+  as raw text in the rendered ConfigMap. Do NOT switch to printf; mixing
+  styles in this file will silently mis-render.
+*/}}
+data:
+  ding.yaml: |
+    server:
+      drain_timeout: {{ .Values.ding.drainTimeout }}
+    notifiers:
+      {{- if .Values.slack.webhookUrl }}
+      slack:
+        type: slack
+        url: ${SLACK_WEBHOOK_URL}
+      {{- end }}
+    rules:
+      - name: job_failed
+        match:
+          metric: run.exit
+        condition: value != 0
+        mode: end-of-run
+        message: "{{`{{ .pod }} (Job {{ .job_name }}) failed with exit {{ .exit_code }}`}}"
+        alert:
+          - notifier: slack

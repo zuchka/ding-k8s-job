@@ -1,0 +1,132 @@
+suite: Slack quickstart Job rendering
+templates:
+  - templates/job.yaml
+  - templates/configmap.yaml
+  - templates/secret.yaml
+
+tests:
+  - it: renders a Job (not CronJob) with the wrapper command
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/services/T0/B0/abc"
+    asserts:
+      - equal:
+          path: kind
+          value: Job
+        template: templates/job.yaml
+      - equal:
+          path: spec.template.spec.containers[0].command[0]
+          value: /shared/ding
+        template: templates/job.yaml
+      - equal:
+          path: spec.template.spec.containers[0].command[1]
+          value: run
+        template: templates/job.yaml
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: python
+        template: templates/job.yaml
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: train.py
+        template: templates/job.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: my-app:v1.2.3
+        template: templates/job.yaml
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 60
+        template: templates/job.yaml
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+        template: templates/job.yaml
+      - equal:
+          path: spec.backoffLimit
+          value: 0
+        template: templates/job.yaml
+
+  - it: renders the chart-managed Secret with key SLACK_WEBHOOK_URL
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/services/T0/B0/abc"
+    asserts:
+      - equal:
+          path: kind
+          value: Secret
+        template: templates/secret.yaml
+      - equal:
+          path: stringData.SLACK_WEBHOOK_URL
+          value: "https://hooks.slack.com/services/T0/B0/abc"
+        template: templates/secret.yaml
+
+  - it: renders the ConfigMap with Slack notifier and default rule
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/services/T0/B0/abc"
+    asserts:
+      - equal:
+          path: kind
+          value: ConfigMap
+        template: templates/configmap.yaml
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'type: slack'
+        template: templates/configmap.yaml
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'url: \$\{SLACK_WEBHOOK_URL\}'
+        template: templates/configmap.yaml
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'name: job_failed'
+        template: templates/configmap.yaml
+      - matchRegex:
+          path: data["ding.yaml"]
+          pattern: 'mode: end-of-run'
+        template: templates/configmap.yaml
+
+  - it: workload container envFroms the chart-managed Secret
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/services/T0/B0/abc"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: RELEASE-NAME-ding-k8s-job
+        template: templates/job.yaml
+
+  - it: downward API env block is present and populated
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/services/T0/B0/abc"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POD_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+        template: templates/job.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: JOB_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: "metadata.labels['job-name']"
+        template: templates/job.yaml
