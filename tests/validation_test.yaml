@@ -90,3 +90,15 @@ tests:
       - failedTemplate:
           errorMessage: "image.tag is required (no `latest` default to prevent footguns)"
         template: templates/job.yaml
+
+  - it: emits placeholder image and skips validation when fully unconfigured (the helm lint path)
+    set: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: PLACEHOLDER-set-image-repository-and-tag:PLACEHOLDER
+        template: templates/job.yaml
+      - notFailedTemplate: {}
+        template: templates/job.yaml
+      - notFailedTemplate: {}
+        template: templates/configmap.yaml
