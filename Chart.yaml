@@ -4,7 +4,7 @@ description: Run Kubernetes Jobs and CronJobs with embedded DING alerting — al
 type: application
 
 # Chart's own SemVer — bumps on chart changes regardless of DING version
-version: 1.0.0
+version: 1.0.1
 
 # DING release version this chart pins by default (image.tag falls back to this)
 appVersion: "v0.5.1"

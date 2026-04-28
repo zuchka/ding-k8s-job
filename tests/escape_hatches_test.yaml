@@ -125,3 +125,33 @@ tests:
       - equal:
           path: spec.template.metadata.labels.team
           value: data-platform
+
+  - it: dingResources flow through to the DING initContainer
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      dingResources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.requests.cpu
+          value: 10m
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.requests.memory
+          value: 16Mi
+
+  - it: priorityClassName flows through
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      priorityClassName: high-priority
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: high-priority

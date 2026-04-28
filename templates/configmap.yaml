@@ -16,7 +16,7 @@ data:
         url: ${SLACK_WEBHOOK_URL}
       {{- end }}
       {{- with .Values.extraNotifiers }}
-      {{/* String branch handles `--set-file extraNotifiers=path` (Helm passes file content as string). Map branch handles `-f`/`--set`. */}}
+      {{- /* String branch handles `--set-file extraNotifiers=path` (Helm passes file content as string). Map branch handles `-f`/`--set`. */ -}}
       {{- if kindIs "string" . }}
       {{- fromYaml . | toYaml | nindent 6 }}
       {{- else }}
@@ -30,12 +30,12 @@ data:
           metric: run.exit
         condition: value != 0
         mode: end-of-run
-        {{/* Below: backtick-string-literal escape so Helm emits DING's {{ "{{" }} ... {{ "}}" }} syntax verbatim. Do NOT switch to printf — mixing styles silently mis-renders. */}}
+        {{- /* Below: backtick-string-literal escape so Helm emits DING's {{ "{{" }} ... {{ "}}" }} syntax verbatim. Do NOT switch to printf — mixing styles silently mis-renders. */ -}}
         message: "{{`{{ .pod }} (Job {{ .job_name }}) failed with exit {{ .exit_code }}`}}"
         alert:
           - notifier: slack
       {{- else }}
-      {{/* Same `--set-file` handling as extraNotifiers above. */}}
+      {{- /* Same `--set-file` handling as extraNotifiers above. */ -}}
       {{- if kindIs "string" .Values.rules }}
       {{- fromYamlArray .Values.rules | toYaml | nindent 6 }}
       {{- else }}

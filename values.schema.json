@@ -12,8 +12,8 @@
           "description": "Workload image repository (required). Render-time validation in templates rejects REQUIRED-/PLACEHOLDER- sentinel values; schema doesn't enforce this because Helm's RE2 regex engine lacks negative-lookahead support."
         },
         "tag": {
-          "type": "string",
-          "description": "Workload image tag (required). Render-time validation in templates rejects REQUIRED-/PLACEHOLDER- sentinel values; schema doesn't enforce this because Helm's RE2 regex engine lacks negative-lookahead support."
+          "type": ["string", "number"],
+          "description": "Workload image tag (required). Render-time validation in templates rejects REQUIRED-/PLACEHOLDER- sentinel values; schema doesn't enforce this because Helm's RE2 regex engine lacks negative-lookahead support. Accepts numbers so that `--set image.tag=3` (Alpine 3, etc.) works — the workloadImage helper coerces via printf %s."
         },
         "pullPolicy": {
           "type": "string",

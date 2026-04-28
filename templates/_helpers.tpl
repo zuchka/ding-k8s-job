@@ -63,6 +63,22 @@ Workload command — wraps user's command with `ding run --`.
 {{- end }}
 
 {{/*
+isUnconfigured returns "1" if all of image.repository, image.tag, and command
+are empty/sentinel — the "user hasn't done anything yet" signal. Used by
+workloadImage and validate to skip strict validation in this state, so that
+`helm lint .` works on stock defaults without --set overrides.
+
+Returns empty string (falsy in Helm template context) when configured.
+*/}}
+{{- define "ding-k8s-job.isUnconfigured" -}}
+{{- $repo := regexReplaceAll "^REQUIRED-.*$" (printf "%v" .Values.image.repository) "" -}}
+{{- $tag := regexReplaceAll "^REQUIRED-.*$" (printf "%v" .Values.image.tag) "" -}}
+{{- if and (not $repo) (and (not $tag) (empty .Values.command)) -}}
+1
+{{- end -}}
+{{- end -}}
+
+{{/*
 Resolve the workload image (with sentinel rejection).
 Sentinel defaults in values.yaml are required because empty strings break
 helm lint, and helm's `required` directive only emits a warning. We strip
@@ -75,10 +91,9 @@ parseable. Real installs always set at least one real value, which trips the
 fail path.
 */}}
 {{- define "ding-k8s-job.workloadImage" -}}
-{{- $repo := regexReplaceAll "^REQUIRED-.*$" .Values.image.repository "" -}}
-{{- $tag := regexReplaceAll "^REQUIRED-.*$" .Values.image.tag "" -}}
-{{- $unconfigured := and (not $repo) (and (not $tag) (empty .Values.command)) -}}
-{{- if $unconfigured -}}
+{{- $repo := regexReplaceAll "^REQUIRED-.*$" (printf "%v" .Values.image.repository) "" -}}
+{{- $tag := regexReplaceAll "^REQUIRED-.*$" (printf "%v" .Values.image.tag) "" -}}
+{{- if include "ding-k8s-job.isUnconfigured" . -}}
 {{- printf "PLACEHOLDER-set-image-repository-and-tag:PLACEHOLDER" -}}
 {{- else -}}
 {{- if not $repo -}}{{- fail "image.repository is required (the workload image to wrap)" -}}{{- end -}}
@@ -97,10 +112,9 @@ AND command is empty — that combination signals "user hasn't configured anythi
 podSpec be the gating fail point at install time.
 */}}
 {{- define "ding-k8s-job.validate" -}}
-{{- $repo := regexReplaceAll "^REQUIRED-.*$" .Values.image.repository "" -}}
-{{- $tag := regexReplaceAll "^REQUIRED-.*$" .Values.image.tag "" -}}
-{{- $unconfigured := and (not $repo) (and (not $tag) (empty .Values.command)) -}}
-{{- if not $unconfigured -}}
+{{- $repo := regexReplaceAll "^REQUIRED-.*$" (printf "%v" .Values.image.repository) "" -}}
+{{- $tag := regexReplaceAll "^REQUIRED-.*$" (printf "%v" .Values.image.tag) "" -}}
+{{- if not (include "ding-k8s-job.isUnconfigured" .) -}}
 {{- if not $repo -}}
 {{- fail "image.repository is required (the workload image to wrap)" -}}
 {{- end -}}
@@ -116,7 +130,11 @@ podSpec be the gating fail point at install time.
 {{- if and .Values.slack.webhookUrl .Values.existingSecret -}}
 {{- fail "slack.webhookUrl and existingSecret are mutually exclusive — pick one" -}}
 {{- end -}}
-{{- if and .Values.slack.webhookUrl (hasKey .Values.extraNotifiers "slack") -}}
+{{- $extra := .Values.extraNotifiers -}}
+{{- if kindIs "string" $extra -}}
+{{- $extra = fromYaml $extra -}}
+{{- end -}}
+{{- if and .Values.slack.webhookUrl (hasKey $extra "slack") -}}
 {{- fail "extraNotifiers.slack collides with the chart-managed slack notifier — use one or the other" -}}
 {{- end -}}
 {{- end -}}
@@ -211,6 +229,7 @@ spec:
         {{- end }}
       {{- end }}
       {{- /* envFrom priority: existingSecret > chart-managed slack Secret > none. Preserved from T4 — must remain conditional. */}}
+      {{- if or .Values.existingSecret .Values.slack.webhookUrl .Values.extraEnvFrom }}
       envFrom:
         {{- if .Values.existingSecret }}
         - secretRef:
@@ -222,6 +241,7 @@ spec:
         {{- with .Values.extraEnvFrom }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+      {{- end }}
       env:
         - name: POD_UID
           valueFrom:

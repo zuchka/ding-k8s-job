@@ -102,3 +102,18 @@ tests:
         template: templates/job.yaml
       - notFailedTemplate: {}
         template: templates/configmap.yaml
+
+  - it: fails when extraNotifiers (as YAML string via --set-file) contains slack key AND slack.webhookUrl is set
+    set:
+      image.repository: my-app
+      image.tag: v1.2.3
+      command: ["python", "train.py"]
+      slack.webhookUrl: "https://hooks.slack.com/foo"
+      extraNotifiers: |
+        slack:
+          type: slack
+          url: https://hooks.slack.com/other
+    asserts:
+      - failedTemplate:
+          errorMessage: "extraNotifiers.slack collides with the chart-managed slack notifier — use one or the other"
+        template: templates/configmap.yaml
