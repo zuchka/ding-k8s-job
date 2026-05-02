@@ -44,7 +44,7 @@ jobs:
       - name: Push chart to OCI registry
         run: |
           CHART_VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
-          helm push "./dist/ding-k8s-job-${CHART_VERSION}.tgz" oci://ghcr.io/zuchka
+          helm push "./dist/ding-k8s-job-${CHART_VERSION}.tgz" oci://ghcr.io/ding-labs
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
@@ -64,7 +64,7 @@ jobs:
         # `crane digest` step needed.
         run: |
           CHART_VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
-          cosign sign --yes "ghcr.io/zuchka/ding-k8s-job:${CHART_VERSION}"
+          cosign sign --yes "ghcr.io/ding-labs/ding-k8s-job:${CHART_VERSION}"
         env:
           COSIGN_EXPERIMENTAL: "1"
 

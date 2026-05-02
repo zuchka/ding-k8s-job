@@ -12,12 +12,12 @@ appVersion: "v0.5.1"
 # Helm 3.8+ required for OCI distribution and values.schema.json
 kubeVersion: ">=1.21-0"
 
-home: https://github.com/zuchka/ding-k8s-job
-icon: https://raw.githubusercontent.com/zuchka/ding/main/docs/assets/ding-logo.png
+home: https://github.com/ding-labs/ding-k8s-job
+icon: https://raw.githubusercontent.com/ding-labs/ding/main/docs/assets/ding-logo.png
 
 sources:
-  - https://github.com/zuchka/ding-k8s-job
-  - https://github.com/zuchka/ding
+  - https://github.com/ding-labs/ding-k8s-job
+  - https://github.com/ding-labs/ding
 
 keywords:
   - alerting
