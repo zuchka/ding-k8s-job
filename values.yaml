@@ -10,7 +10,7 @@ args: []
 # DING wrapper container — the initContainer that copies /ding into the Pod.
 ding:
   image:
-    repository: ghcr.io/zuchka/ding
+    repository: ghcr.io/ding-labs/ding
     tag: ""              # defaults to .Chart.AppVersion
     pullPolicy: IfNotPresent
   drainTimeout: 30s

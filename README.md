@@ -1,13 +1,13 @@
 # ding-k8s-job
 
-> Helm chart for running Kubernetes Jobs and CronJobs with embedded [DING](https://github.com/zuchka/ding) alerting. Alert on non-zero exit out of the box.
+> Helm chart for running Kubernetes Jobs and CronJobs with embedded [DING](https://github.com/ding-labs/ding) alerting. Alert on non-zero exit out of the box.
 
-`ding-k8s-job` collapses the [DING K8s recipe's](https://github.com/zuchka/ding/blob/main/docs/recipes/kubernetes-jobs.md) 93-line manifest into a one-line `helm install`. Wrapper-pattern only; works on Kubernetes 1.21+. Requires Helm 3.8+.
+`ding-k8s-job` collapses the [DING K8s recipe's](https://github.com/ding-labs/ding/blob/main/docs/recipes/kubernetes-jobs.md) 93-line manifest into a one-line `helm install`. Wrapper-pattern only; works on Kubernetes 1.21+. Requires Helm 3.8+.
 
 ## Quick start (Slack, dev)
 
 ```bash
-helm install nightly-batch oci://ghcr.io/zuchka/ding-k8s-job \
+helm install nightly-batch oci://ghcr.io/ding-labs/ding-k8s-job \
   --set image.repository=my-app \
   --set image.tag=v1.2.3 \
   --set command='{python,train.py}' \
@@ -53,7 +53,7 @@ Write your rule YAML (`prod-rules.yaml`):
 Install:
 
 ```bash
-helm install nightly-batch oci://ghcr.io/zuchka/ding-k8s-job \
+helm install nightly-batch oci://ghcr.io/ding-labs/ding-k8s-job \
   --set image.repository=my-app \
   --set image.tag=v1.2.3 \
   --set command='{python,train.py}' \
@@ -67,7 +67,7 @@ helm install nightly-batch oci://ghcr.io/zuchka/ding-k8s-job \
 ## CronJob
 
 ```bash
-helm install nightly-cron oci://ghcr.io/zuchka/ding-k8s-job \
+helm install nightly-cron oci://ghcr.io/ding-labs/ding-k8s-job \
   --set kind=CronJob \
   --set schedule='0 2 * * *' \
   --set image.repository=my-app \
@@ -123,11 +123,11 @@ See [values.yaml](./values.yaml) for the full annotated set. Highlights:
 
 ## How this chart relates to DING's K8s recipe
 
-The [K8s recipe in the DING repo](https://github.com/zuchka/ding/blob/main/docs/recipes/kubernetes-jobs.md) is the unrolled equivalent of this chart. If you want fine-grained control over every K8s field, copy the recipe's manifest. If you want the one-line install, use this chart.
+The [K8s recipe in the DING repo](https://github.com/ding-labs/ding/blob/main/docs/recipes/kubernetes-jobs.md) is the unrolled equivalent of this chart. If you want fine-grained control over every K8s field, copy the recipe's manifest. If you want the one-line install, use this chart.
 
 ## Sidecar pattern
 
-The recipe also documents a [sidecar pattern](https://github.com/zuchka/ding/blob/main/docs/recipes/kubernetes-jobs.md#sidecar-alternative-k8s-129) for K8s 1.29+ when the workload's container has a fixed entrypoint. This chart is wrapper-only; sidecar coverage may land in a future version if user demand emerges.
+The recipe also documents a [sidecar pattern](https://github.com/ding-labs/ding/blob/main/docs/recipes/kubernetes-jobs.md#sidecar-alternative-k8s-129) for K8s 1.29+ when the workload's container has a fixed entrypoint. This chart is wrapper-only; sidecar coverage may land in a future version if user demand emerges.
 
 ## License
 
