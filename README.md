@@ -131,4 +131,4 @@ The recipe also documents a [sidecar pattern](https://github.com/zuchka/ding/blo
 
 ## License
 
-[AGPL-3.0-or-later](./LICENSE) — same as DING.
+[Apache-2.0](./LICENSE) — same as DING.
